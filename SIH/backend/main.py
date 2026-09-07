@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -6,21 +7,24 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend.database import (
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database import (
     init_db,
     get_db_connection,
     reset_corridor_to_normal
 )
-from backend.ml_risk_model import predict_segment_risk, load_risk_model
-from backend.router import calculate_optimal_route, get_safest_ai_route
-from backend.triage_engine import (
+from ml_risk_model import predict_segment_risk, load_risk_model
+from router import calculate_optimal_route, get_safest_ai_route
+from triage_engine import (
     get_all_cargo,
     add_cargo_vehicle,
     seed_mixed_convoy,
     dispatch_on_lane_cleared,
     reset_all_cargo
 )
-from backend.websocket_manager import ws_manager
+from websocket_manager import ws_manager
 
 app = FastAPI(
     title="NER-SANCHAAR | High-Altitude Logistics & Hazard Portal",
@@ -567,9 +571,7 @@ async def websocket_corridor(websocket: WebSocket):
         ws_manager.disconnect(websocket)
 
 if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     import uvicorn
     init_db()
     load_risk_model()
-    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

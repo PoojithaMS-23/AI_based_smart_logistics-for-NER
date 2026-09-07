@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import joblib
 from typing import Tuple
+from backend.corridor_states import risk_score_to_state
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
@@ -116,11 +117,16 @@ def load_risk_model():
 
 def predict_segment_risk(rainfall_mm: float, slope_deg: float, susceptibility: float) -> Tuple[float, str]:
     """
-    Evaluates dynamic landslide risk score (0.0 to 1.0) and recommended status.
-    Risk thresholds:
-      - score >= 0.65 -> HIGH-RISK
-      - score >= 0.40 -> CONSTRAINED
-      - otherwise     -> OPEN
+    Evaluates dynamic landslide risk score (0.0 to 1.0) and recommends one of the five corridor states.
+    
+    Risk score thresholds (deterministic domain mapping):
+      - score >= 0.65 -> HIGH-RISK (significant hazard; caution needed)
+      - score >= 0.40 -> CONSTRAINED (minor hazard; reduced speed)
+      - otherwise     -> OPEN (passable at normal speed)
+    
+    Note: DISRUPTED and BLOCKED states are typically set by field reports (ground truth),
+    not by this model alone. This model produces risk probability; field verification
+    converts that into an actual corridor state.
     """
     model = load_risk_model()
 
@@ -146,12 +152,8 @@ def predict_segment_risk(rainfall_mm: float, slope_deg: float, susceptibility: f
 
     prob = round(prob, 3)
 
-    if prob >= 0.65:
-        state = "HIGH-RISK"
-    elif prob >= 0.40:
-        state = "CONSTRAINED"
-    else:
-        state = "OPEN"
+    # Deterministic state mapping from risk probability using centralized definition
+    state = risk_score_to_state(prob)
 
     return prob, state
 

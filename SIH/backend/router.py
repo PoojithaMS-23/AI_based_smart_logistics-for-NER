@@ -2,6 +2,13 @@ import math
 from typing import Dict, List, Any, Optional, Tuple
 import networkx as nx
 from backend.database import get_db_connection
+from backend.corridor_states import (
+    get_cost_multiplier, 
+    validate_state, 
+    is_valid_corridor_state, 
+    get_corridor_state_cost,
+    CORRIDOR_STATES
+)
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculates great-circle distance between two GPS coordinates in kilometers."""
@@ -15,19 +22,14 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return R * c
 
 def get_state_multiplier(state: str) -> float:
-    """Cost multiplier applied to base road distance in the risk-weighted A* algorithm."""
-    s = state.upper()
-    if s == "OPEN":
-        return 1.0
-    elif s == "CONSTRAINED":
-        return 2.8
-    elif s == "HIGH-RISK":
-        return 10.0
-    elif s == "DISRUPTED":
-        return 20.0
-    elif s == "BLOCKED":
-        return float("inf")
-    return 1.0
+    """
+    Returns the A* cost multiplier for a corridor state.
+    Uses the centralized CORRIDOR_STATES definition.
+    Raises an error if the state is invalid (data integrity check).
+    """
+    if not is_valid_corridor_state(state):
+        raise ValueError(f"Invalid corridor state: '{state}'. Valid states: {list(CORRIDOR_STATES.keys())}")
+    return get_corridor_state_cost(state)
 
 def build_corridor_graph() -> Tuple[nx.Graph, Dict[str, Any], Dict[str, Any]]:
     conn = get_db_connection()
