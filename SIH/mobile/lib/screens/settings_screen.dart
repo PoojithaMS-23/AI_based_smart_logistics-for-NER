@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../services/sync_service.dart';
 import '../services/database_service.dart';
+import 'home_screen.dart' show AppColors;
 
 /// Settings and configuration screen
 class SettingsScreen extends StatefulWidget {
@@ -200,20 +201,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bgDark,
       appBar: AppBar(
-        title: const Text('Settings'),
+        backgroundColor: AppColors.slate950,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textSecond),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('SYSTEM SETTINGS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 1)),
+            Text('Field Configuration', style: TextStyle(fontSize: 9, color: AppColors.textMuted, letterSpacing: 0.5)),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: _saveSettings,
             child: const Text(
-              'Save',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              'SAVE',
+              style: TextStyle(color: AppColors.cyan, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.5),
             ),
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.cyan))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
