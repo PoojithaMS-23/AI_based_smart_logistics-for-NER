@@ -7,24 +7,55 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure both current directory (backend) and project root (SIH) are in sys.path
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_parent_dir = os.path.dirname(_current_dir)
+for _p in [_current_dir, _parent_dir]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
-from database import (
-    init_db,
-    get_db_connection,
-    reset_corridor_to_normal
-)
-from ml_risk_model import predict_segment_risk, load_risk_model
-from router import calculate_optimal_route, get_safest_ai_route
-from triage_engine import (
-    get_all_cargo,
-    add_cargo_vehicle,
-    seed_mixed_convoy,
-    dispatch_on_lane_cleared,
-    reset_all_cargo
-)
-from websocket_manager import ws_manager
+try:
+    from backend.database import (
+        init_db,
+        get_db_connection,
+        reset_corridor_to_normal
+    )
+    from backend.ml_risk_model import predict_segment_risk, load_risk_model
+    from backend.router import calculate_optimal_route, get_safest_ai_route
+    from backend.triage_engine import (
+        get_all_cargo,
+        add_cargo_vehicle,
+        seed_mixed_convoy,
+        dispatch_on_lane_cleared,
+        reset_all_cargo
+    )
+    from backend.websocket_manager import ws_manager
+    from backend.corridor_states import (
+        CORRIDOR_STATES,
+        is_valid_corridor_state,
+        get_corridor_state_cost
+    )
+except ImportError:
+    from database import (
+        init_db,
+        get_db_connection,
+        reset_corridor_to_normal
+    )
+    from ml_risk_model import predict_segment_risk, load_risk_model
+    from router import calculate_optimal_route, get_safest_ai_route
+    from triage_engine import (
+        get_all_cargo,
+        add_cargo_vehicle,
+        seed_mixed_convoy,
+        dispatch_on_lane_cleared,
+        reset_all_cargo
+    )
+    from websocket_manager import ws_manager
+    from corridor_states import (
+        CORRIDOR_STATES,
+        is_valid_corridor_state,
+        get_corridor_state_cost
+    )
 
 app = FastAPI(
     title="NER-SANCHAAR | High-Altitude Logistics & Hazard Portal",
@@ -52,11 +83,16 @@ class RainfallSimulationRequest(BaseModel):
     rainfall_mm: float
 
 class FieldReportRequest(BaseModel):
+    id: Optional[str] = None
     segment_id: str
     hazard_type: str
     severity: str
     reporter_id: str = "BRO Unit-42 (Dibang)"
     notes: Optional[str] = "Immediate tactical observation from field patrol"
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    photo_path: Optional[str] = None
+    timestamp: Optional[str] = None
 
 class SegmentStateUpdateRequest(BaseModel):
     state: str
@@ -193,16 +229,34 @@ async def simulate_rainfall(payload: RainfallSimulationRequest):
 
 @app.post("/api/reports")
 async def submit_field_report(payload: FieldReportRequest):
-    report_id = f"RPT-{uuid.uuid4().hex[:6].upper()}"
+    report_id = payload.id if payload.id else f"RPT-{uuid.uuid4().hex[:6].upper()}"
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Idempotency check: exactly-once persistence for offline synchronization
+    cursor.execute("SELECT id FROM field_reports WHERE id = ?;", (report_id,))
+    if cursor.fetchone():
+        conn.close()
+        corridor_state = get_corridor_payload()
+        return {
+            "success": True,
+            "report_id": report_id,
+            "ground_truth_applied": False,
+            "corridor": corridor_state,
+            "duplicate": True
+        }
 
     cursor.execute("""
         INSERT INTO field_reports (id, segment_id, hazard_type, severity, reporter_id, notes)
         VALUES (?, ?, ?, ?, ?, ?);
     """, (report_id, payload.segment_id, payload.hazard_type, payload.severity, payload.reporter_id, payload.notes))
 
-    is_severe_hazard = payload.hazard_type in ["Landslide", "Blockade", "Flood"] or payload.severity in ["Severe", "Complete Blockage"]
+    sev = (payload.severity or "").strip().title()
+    is_severe_hazard = (
+        sev in ["Severe", "Complete Blockage"] or
+        (payload.hazard_type in ["Landslide", "Blockade", "Flood"] and sev not in ["Moderate", "Medium", "Minor", "Low"])
+    )
+    is_moderate_hazard = sev in ["Medium", "Moderate", "Constrained"]
     
     if is_severe_hazard:
         override_reason = f"Ground Truth Override: {payload.hazard_type} ({payload.severity}) reported by {payload.reporter_id}"
@@ -214,8 +268,8 @@ async def submit_field_report(payload: FieldReportRequest):
                 last_updated = CURRENT_TIMESTAMP
             WHERE id = ?;
         """, (override_reason, payload.segment_id))
-    elif payload.severity in ["Medium", "Constrained"]:
-        override_reason = f"Field Advisory: {payload.hazard_type} reported by {payload.reporter_id}"
+    elif is_moderate_hazard:
+        override_reason = f"Field Advisory: {payload.hazard_type} ({payload.severity}) reported by {payload.reporter_id}"
         cursor.execute("""
             UPDATE segments 
             SET state = 'CONSTRAINED',

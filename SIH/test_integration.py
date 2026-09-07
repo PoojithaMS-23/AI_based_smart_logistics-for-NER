@@ -7,7 +7,10 @@ import sys
 import os
 sys.path.insert(0, '.')
 
-import asyncio
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 import json
 from backend.database import init_db
 from backend.main import get_corridor_payload

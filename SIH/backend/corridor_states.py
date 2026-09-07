@@ -10,30 +10,35 @@ CORRIDOR_STATES = {
         "display_name": "Open (Safe)",
         "color": "#10b981",  # green
         "cost_multiplier": 1.0,
+        "severity": 0,
         "description": "Corridor passable at normal speed. No known hazards."
     },
     "CONSTRAINED": {
         "display_name": "Constrained (Use with Caution)",
         "color": "#f97316",  # orange
         "cost_multiplier": 2.8,
+        "severity": 1,
         "description": "Single lane / limited capacity. Reduced speed required."
-    },
-    "DISRUPTED": {
-        "display_name": "Disrupted (High Risk)",
-        "color": "#a855f7",  # purple
-        "cost_multiplier": 20.0,
-        "description": "Severe debris or minor obstruction. Extreme caution advised."
     },
     "HIGH-RISK": {
         "display_name": "High-Risk (Avoid)",
         "color": "#eab308",  # yellow
         "cost_multiplier": 10.0,
+        "severity": 2,
         "description": "Geotechnical hazard detected. Reroute strongly recommended."
+    },
+    "DISRUPTED": {
+        "display_name": "Disrupted (High Risk)",
+        "color": "#a855f7",  # purple
+        "cost_multiplier": 20.0,
+        "severity": 3,
+        "description": "Severe debris or minor obstruction. Extreme caution advised."
     },
     "BLOCKED": {
         "display_name": "Blocked (Impassable)",
         "color": "#ef4444",  # red
         "cost_multiplier": float("inf"),
+        "severity": 4,
         "description": "Road completely severed. No passage possible."
     }
 }

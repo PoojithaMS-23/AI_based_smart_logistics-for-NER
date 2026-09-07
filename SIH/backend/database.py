@@ -4,45 +4,19 @@ from typing import Dict, List, Any, Optional
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "corridor.db")
 
-# ==================== AUTHORITATIVE CORRIDOR STATE DEFINITIONS ====================
-# These are the ONLY valid corridor states. Used throughout the entire backend.
-CORRIDOR_STATES = {
-    "OPEN": {
-        "description": "Road fully passable at normal speed",
-        "cost_multiplier": 1.0,
-        "severity": 0
-    },
-    "CONSTRAINED": {
-        "description": "Single lane or reduced speed due to minor hazard",
-        "cost_multiplier": 2.8,
-        "severity": 1
-    },
-    "HIGH-RISK": {
-        "description": "Significant hazard; proceed with caution; consider alternative routes",
-        "cost_multiplier": 10.0,
-        "severity": 2
-    },
-    "DISRUPTED": {
-        "description": "Severe disruption; alternative routes strongly recommended",
-        "cost_multiplier": 20.0,
-        "severity": 3
-    },
-    "BLOCKED": {
-        "description": "Road completely impassable; no through traffic",
-        "cost_multiplier": float("inf"),
-        "severity": 4
-    }
-}
-
-def is_valid_corridor_state(state: str) -> bool:
-    """Validates that a state is one of the five authorized corridor states."""
-    return state in CORRIDOR_STATES
-
-def get_corridor_state_cost(state: str) -> float:
-    """Returns the A* cost multiplier for a given corridor state."""
-    if not is_valid_corridor_state(state):
-        raise ValueError(f"Invalid corridor state: {state}. Valid states: {list(CORRIDOR_STATES.keys())}")
-    return CORRIDOR_STATES[state]["cost_multiplier"]
+# Import authoritative corridor state definitions (Single Source of Truth)
+try:
+    from backend.corridor_states import (
+        CORRIDOR_STATES,
+        is_valid_corridor_state,
+        get_corridor_state_cost
+    )
+except ImportError:
+    from corridor_states import (
+        CORRIDOR_STATES,
+        is_valid_corridor_state,
+        get_corridor_state_cost
+    )
 
 def get_db_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)

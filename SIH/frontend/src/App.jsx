@@ -356,6 +356,11 @@ export default function App() {
               <span className="font-mono opacity-80 border-l border-current pl-2 ml-1">
                 {corridorData.optimal_route.total_distance_km} km
               </span>
+              {safestRouteData?.safety_score_pct && (
+                <span className="font-mono font-bold text-cyan-300 border-l border-current pl-2 ml-1">
+                  🛡️ {safestRouteData.safety_score_pct}% AI Safety
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -444,23 +449,23 @@ export default function App() {
 
         {/* Right Tactical Intelligence Drawer */}
         <div className="w-[460px] h-full bg-slate-950/95 border-l border-slate-800 flex flex-col z-20 shadow-2xl backdrop-blur-md">
-          {/* Drawer Navigation Tabs */}
-          <div className="flex border-b border-slate-800 bg-slate-900/60 p-1.5 gap-1 overflow-x-auto">
+          {/* Drawer Navigation Tabs - 2-row grid so all 8 tabs are instantly visible */}
+          <div className="grid grid-cols-4 border-b border-slate-800 bg-slate-900/80 p-1.5 gap-1">
             <button
               onClick={() => setActiveTab('triage')}
-              className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all ${
                 activeTab === 'triage'
                   ? 'bg-amber-950/90 text-amber-300 border border-amber-600/80 shadow-md'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
               <Truck className="w-3.5 h-3.5" />
-              <span>Priority Triage</span>
+              <span>Triage</span>
             </button>
 
             <button
               onClick={() => setActiveTab('scheduler')}
-              className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all ${
                 activeTab === 'scheduler'
                   ? 'bg-blue-950/90 text-cyan-300 border border-cyan-600/80 shadow-md'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
@@ -472,7 +477,7 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('incident_feed')}
-              className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all ${
                 activeTab === 'incident_feed'
                   ? 'bg-cyan-950/90 text-cyan-300 border border-cyan-600/80 shadow-md'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
@@ -484,7 +489,7 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('goods_receipt')}
-              className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all ${
                 activeTab === 'goods_receipt'
                   ? 'bg-purple-950/90 text-purple-300 border border-purple-600/80 shadow-md'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
@@ -496,7 +501,7 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('driver_nav')}
-              className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all ${
                 activeTab === 'driver_nav'
                   ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-600/80 shadow-md'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
@@ -508,7 +513,7 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('simulator')}
-              className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all ${
                 activeTab === 'simulator'
                   ? 'bg-amber-950/90 text-amber-300 border border-amber-600/80 shadow-md'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
@@ -520,7 +525,7 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('field_pwa')}
-              className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all ${
                 activeTab === 'field_pwa'
                   ? 'bg-rose-950/90 text-rose-300 border border-rose-600/80 shadow-md'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
@@ -532,7 +537,7 @@ export default function App() {
 
             <button
               onClick={() => setActiveTab('inspector')}
-              className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              className={`px-2 py-1.5 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-all ${
                 activeTab === 'inspector'
                   ? 'bg-slate-800 text-slate-100 border border-slate-600 shadow-md'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
